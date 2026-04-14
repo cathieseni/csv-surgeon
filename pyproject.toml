@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "csv-surgeon"
+version = "0.1.0"
+description = "In-place CSV transformations with a chainable filter DSL."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "csv-surgeon contributors" },
+]
+keywords = ["csv", "cli", "filter", "transform"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Environment :: Console",
+    "Topic :: Utilities",
+]
+
+[project.scripts]
+csv-surgeon = "csv_surgeon.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["csv_surgeon*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I"]

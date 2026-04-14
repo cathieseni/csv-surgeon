@@ -1,4 +1,4 @@
-"""Sub-command registry for csv-surgeon CLI."""
-from csv_surgeon.commands import aggregate_cmd
+"""Sub-command modules for csv-surgeon."""
+from csv_surgeon.commands import aggregate_cmd, sort_cmd
 
-__all__ = ["aggregate_cmd"]
+__all__ = ["aggregate_cmd", "sort_cmd"]

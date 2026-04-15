@@ -1,7 +1,7 @@
-"""Register all subcommands with the top-level argument parser."""
+"""Register all sub-commands with the top-level argument parser."""
 from __future__ import annotations
 
-import argparse
+from argparse import _SubParsersAction
 
 from csv_surgeon.commands import (
     aggregate_cmd,
@@ -9,6 +9,8 @@ from csv_surgeon.commands import (
     dedupe_cmd,
     drop_cmd,
     fill_cmd,
+    flatten_cmd,
+    freq_cmd,
     head_cmd,
     join_cmd,
     pivot_cmd,
@@ -17,21 +19,30 @@ from csv_surgeon.commands import (
     slice_cmd,
     sort_cmd,
     stats_cmd,
+    uniq_cmd,
 )
 
+_COMMANDS = [
+    aggregate_cmd,
+    cast_cmd,
+    dedupe_cmd,
+    drop_cmd,
+    fill_cmd,
+    flatten_cmd,
+    freq_cmd,
+    head_cmd,
+    join_cmd,
+    pivot_cmd,
+    rename_cmd,
+    sample_cmd,
+    slice_cmd,
+    sort_cmd,
+    stats_cmd,
+    uniq_cmd,
+]
 
-def register_all(subparsers: argparse._SubParsersAction) -> None:
-    """Attach every subcommand to *subparsers*."""
-    aggregate_cmd.add_subparser(subparsers)
-    cast_cmd.add_subparser(subparsers)
-    dedupe_cmd.add_subparser(subparsers)
-    drop_cmd.add_subparser(subparsers)
-    fill_cmd.add_subparser(subparsers)
-    head_cmd.add_subparser(subparsers)
-    join_cmd.add_subparser(subparsers)
-    pivot_cmd.add_subparser(subparsers)
-    rename_cmd.add_subparser(subparsers)
-    sample_cmd.add_subparser(subparsers)
-    slice_cmd.add_subparser(subparsers)
-    sort_cmd.add_subparser(subparsers)
-    stats_cmd.add_subparser(subparsers)
+
+def register_all(subparsers: _SubParsersAction) -> None:
+    """Call add_subparser for every known command module."""
+    for mod in _COMMANDS:
+        mod.add_subparser(subparsers)

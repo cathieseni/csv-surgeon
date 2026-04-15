@@ -74,6 +74,36 @@ def test_dedupe_no_duplicates():
     assert len(result) == len(rows)
 
 
+def test_dedupe_empty_rows():
+    """_dedupe should return an empty list when given no rows."""
+    result = _dedupe([], keys=["name"], keep="first")
+    assert result == []
+
+
+def test_dedupe_all_duplicates_keep_first():
+    """When every row is a duplicate, only the first should survive."""
+    rows = [
+        {"id": "1", "name": "Alice"},
+        {"id": "2", "name": "Alice"},
+        {"id": "3", "name": "Alice"},
+    ]
+    result = _dedupe(rows, keys=["name"], keep="first")
+    assert len(result) == 1
+    assert result[0]["id"] == "1"
+
+
+def test_dedupe_all_duplicates_keep_last():
+    """When every row is a duplicate, only the last should survive."""
+    rows = [
+        {"id": "1", "name": "Alice"},
+        {"id": "2", "name": "Alice"},
+        {"id": "3", "name": "Alice"},
+    ]
+    result = _dedupe(rows, keys=["name"], keep="last")
+    assert len(result) == 1
+    assert result[0]["id"] == "3"
+
+
 # --- integration tests via run() ---
 
 def test_run_stdout(csv_file, capsys):

@@ -57,8 +57,19 @@ csv-surgeon explode data.csv -c tags -s ';'
 csv-surgeon explode data.csv -c tags -o exploded.csv
 ```
 
+### Explode multiple columns
+
+If you need to explode more than one column, chain the command or pipe the
+output of one `explode` into another:
+
+```bash
+csv-surgeon explode data.csv -c tags | csv-surgeon explode - -c categories -s ';'
+```
+
 ## Notes
 
 - Cells that are **empty** produce a single row with an empty string value.
 - Leading and trailing whitespace around each split value is stripped.
 - All other columns are copied verbatim to every expanded row.
+- If the specified column does not exist in the file, the command exits with a
+  non-zero status and prints an error message listing the available columns.

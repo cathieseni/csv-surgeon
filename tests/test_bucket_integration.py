@@ -75,3 +75,15 @@ def test_cli_bucket_three_bins(scores_csv, capsys):
     assert by_name["alice"] == "low"
     assert by_name["bob"] == "mid"
     assert by_name["carol"] == "high"
+
+
+def test_cli_bucket_preserves_all_columns(scores_csv, capsys):
+    """Ensure the bucket command does not drop existing columns."""
+    out = _run_main(
+        ["bucket", scores_csv, "--col", "score", "--bins", "0", "50", "100"],
+        capsys,
+    )
+    rows = _parse(out)
+    assert "name" in rows[0]
+    assert "score" in rows[0]
+    assert "bucket" in rows[0]

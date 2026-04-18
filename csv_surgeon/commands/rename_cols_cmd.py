@@ -1,113 +1,88 @@
-"""rename-cols command: rename columns by position (e.g. 0=id, 1=name)."""
+"""rename-cols command: rename header columns by position or pattern."""
 from __future__ import annotations
 
 import csv
+import io
+import re
 import sys
 from argparse import ArgumentParser, Namespace
-from typing import Dict, List
+from typing import List, Tuple
 
 
 def add_subparser(subparsers) -> None:
-    """Register the rename-cols subcommand."""
     p: ArgumentParser = subparsers.add_parser(
         "rename-cols",
-        help="Rename columns by position index.",
-        description=(
-            "Rename one or more columns identified by zero-based position. "
-            "Specs are given as INDEX=NEW_NAME pairs."
-        ),
+        help="Rename CSV columns by index (0:new) or regex (s/old/new/)",
     )
-    p.add_argument(
-        "file",
-        help="Input CSV file (use '-' for stdin).",
-    )
+    p.add_argument("input", help="Input CSV file")
+    p.add_argument("-o", "--output", default=None, help="Output file (default: stdout)")
     p.add_argument(
         "specs",
         nargs="+",
-        metavar="INDEX=NAME",
-        help="Column rename specs, e.g. 0=id 2=score.",
-    )
-    p.add_argument(
-        "-o", "--output",
-        default=None,
-        metavar="FILE",
-        help="Output file (default: stdout).",
+        help="Rename specs: index:new_name  OR  s/pattern/replacement/",
     )
     p.set_defaults(func=run)
 
 
-def _parse_specs(specs: List[str]) -> Dict[int, str]:
-    """Parse INDEX=NAME strings into a mapping of column index -> new name.
-
-    Raises ValueError for malformed specs.
-    """
-    result: Dict[int, str] = {}
+def _parse_specs(specs: List[str]) -> List[Tuple[str, str | int]]:
+    """Return list of (kind, value) where kind is 'index' or 'regex'."""
+    parsed = []
     for spec in specs:
-        if "=" not in spec:
-            raise ValueError(f"Invalid spec {spec!r}: expected INDEX=NAME format.")
-        idx_str, _, name = spec.partition("=")
-        if not idx_str.lstrip("-").isdigit():
-            raise ValueError(f"Invalid index {idx_str!r}: must be an integer.")
-        if not name:
-            raise ValueError(f"Empty name in spec {spec!r}.")
-        result[int(idx_str)] = name
-    return result
+        if spec.startswith("s/"):
+            parts = spec.split("/")
+            if len(parts) != 4 or parts[0] != "s":
+                raise ValueError(f"Invalid regex spec: {spec!r}")
+            parsed.append(("regex", parts[1], parts[2]))
+        elif ":" in spec:
+            idx_str, new_name = spec.split(":", 1)
+            if not idx_str.lstrip("-").isdigit():
+                raise ValueError(f"Invalid index spec: {spec!r}")
+            parsed.append(("index", int(idx_str), new_name))
+        else:
+            raise ValueError(f"Unrecognised spec: {spec!r}")
+    return parsed
 
 
-def _rename_header(fieldnames: List[str], mapping: Dict[int, str]) -> List[str]:
-    """Return a new header list with positions renamed according to *mapping*."""
+def _rename_header(fieldnames: List[str], parsed_specs) -> List[str]:
     header = list(fieldnames)
-    for idx, new_name in mapping.items():
-        if idx < 0:
-            idx = len(header) + idx
-        if idx < 0 or idx >= len(header):
-            raise IndexError(
-                f"Column index {idx} is out of range for a CSV with "
-                f"{len(header)} columns."
-            )
-        header[idx] = new_name
+    for spec in parsed_specs:
+        if spec[0] == "index":
+            _, idx, new_name = spec
+            if idx < 0:
+                idx = len(header) + idx
+            if 0 <= idx < len(header):
+                header[idx] = new_name
+            else:
+                raise IndexError(f"Column index {idx} out of range")
+        else:  # regex
+            _, pattern, replacement = spec
+            header = [re.sub(pattern, replacement, col) for col in header]
     return header
 
 
-def _write(rows, fieldnames: List[str], dest) -> None:
-    writer = csv.DictWriter(dest, fieldnames=fieldnames)
+def _write(rows, fieldnames, output) -> None:
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(rows)
 
 
 def run(args: Namespace) -> None:
-    """Execute the rename-cols command."""
-    try:
-        mapping = _parse_specs(args.specs)
-    except ValueError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        sys.exit(1)
+    parsed_specs = _parse_specs(args.specs)
 
-    src = sys.stdin if args.file == "-" else open(args.file, newline="")
-    try:
-        reader = csv.DictReader(src)
+    with open(args.input, newline="") as fh:
+        reader = csv.DictReader(fh)
         if reader.fieldnames is None:
-            # Consume first row to populate fieldnames
-            next(reader, None)
-        original_fields: List[str] = list(reader.fieldnames or [])
+            return
+        old_names = list(reader.fieldnames)
+        new_names = _rename_header(old_names, parsed_specs)
+        mapping = dict(zip(old_names, new_names))
 
-        try:
-            new_fields = _rename_header(original_fields, mapping)
-        except IndexError as exc:
-            print(f"error: {exc}", file=sys.stderr)
-            sys.exit(1)
+        rows = []
+        for row in reader:
+            rows.append({mapping.get(k, k): v for k, v in row.items()})
 
-        # Build renamed rows lazily
-        rename_map = dict(zip(original_fields, new_fields))
-        renamed_rows = (
-            {rename_map[k]: v for k, v in row.items()} for row in reader
-        )
-
-        if args.output:
-            with open(args.output, "w", newline="") as out:
-                _write(renamed_rows, new_fields, out)
-        else:
-            _write(renamed_rows, new_fields, sys.stdout)
-    finally:
-        if src is not sys.stdin:
-            src.close()
+    if args.output:
+        with open(args.output, "w", newline="") as out:
+            _write(rows, new_names, out)
+    else:
+        _write(rows, new_names, sys.stdout)

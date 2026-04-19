@@ -46,6 +46,11 @@ def test_parse_columns_list():
     assert _parse_columns(["name", " age "]) == ["name", "age"]
 
 
+def test_parse_columns_empty_list():
+    """An empty column list should return an empty list, not None."""
+    assert _parse_columns([]) == []
+
+
 def _make_rows():
     return [
         {"name": " Alice ", "age": " 30 ", "city": " NYC "},
@@ -69,6 +74,12 @@ def test_strip_selected_columns():
 def test_strip_no_matching_column():
     rows = list(_strip_rows(_make_rows(), columns=["nonexistent"]))
     assert rows[0]["name"] == " Alice "  # unchanged
+
+
+def test_strip_rows_empty_input():
+    """_strip_rows should yield nothing when given an empty iterable."""
+    rows = list(_strip_rows([], columns=None))
+    assert rows == []
 
 
 # ── integration via run() ────────────────────────────────────────────────────

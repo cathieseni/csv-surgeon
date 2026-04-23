@@ -1,4 +1,6 @@
-"""Register all subcommands."""
+"""Register all subcommands with the top-level argument parser."""
+from __future__ import annotations
+
 from csv_surgeon.commands import (
     aggregate_cmd,
     sort_cmd,
@@ -45,6 +47,12 @@ from csv_surgeon.commands import (
     lag_cmd,
     movavg_cmd,
     corr_cmd,
+    abs_cmd,
+    scale_cmd,
+    log_cmd,
+    pow_cmd,
+    interp_cmd,
+    impute_cmd,
 )
 
 _COMMANDS = [
@@ -93,9 +101,16 @@ _COMMANDS = [
     lag_cmd,
     movavg_cmd,
     corr_cmd,
+    abs_cmd,
+    scale_cmd,
+    log_cmd,
+    pow_cmd,
+    interp_cmd,
+    impute_cmd,
 ]
 
 
 def register_all(subparsers) -> None:
+    """Attach every command's subparser to *subparsers*."""
     for cmd in _COMMANDS:
         cmd.add_subparser(subparsers)

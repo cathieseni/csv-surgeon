@@ -1,8 +1,8 @@
-"""Register all sub-commands."""
+"""Register all subcommands with the top-level argument parser."""
 from __future__ import annotations
 
 
-def register_all(subparsers) -> None:  # noqa: C901
+def register_all(subparsers) -> None:  # noqa: PLR0912
     from csv_surgeon.commands import aggregate_cmd
     from csv_surgeon.commands import sort_cmd
     from csv_surgeon.commands import rename_cmd
@@ -62,6 +62,7 @@ def register_all(subparsers) -> None:  # noqa: C901
     from csv_surgeon.commands import extract_cmd
     from csv_surgeon.commands import sqrt_cmd
     from csv_surgeon.commands import hash_cmd
+    from csv_surgeon.commands import bin_cmd
 
     aggregate_cmd.add_subparser(subparsers)
     sort_cmd.add_subparser(subparsers)
@@ -122,3 +123,4 @@ def register_all(subparsers) -> None:  # noqa: C901
     extract_cmd.add_subparser(subparsers)
     sqrt_cmd.add_subparser(subparsers)
     hash_cmd.add_subparser(subparsers)
+    bin_cmd.add_subparser(subparsers)
